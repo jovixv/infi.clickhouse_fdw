@@ -135,18 +135,21 @@ class ClickHouseDataWrapper(ForeignDataWrapper):
 
     def _get_column_stats(self, columns):
         column_stats = {}
+
+        # Temp solutions
         # Get total number of rows
-        total_rows = self.model.objects_in(self.db).count()
+        #total_rows = self.model.objects_in(self.db).count()
         # Get average rows per value in column (total divided by number of unique values)
-        exprs = ['intDiv(%d, uniqCombined(%s)) as %s' % (total_rows, c, c) for c in columns]
-        sql = "SELECT %s FROM $db.`%s`" % (', '.join(exprs), self.table_name)
-        for row in self.db.select(sql):
-            for c in columns:
-                column_stats[c] = dict(average_rows=getattr(row, c), size=4)
+        #exprs = ['intDiv(%d, uniqCombined(%s)) as %s' % (total_rows, c, c) for c in columns]
+        #sql = "SELECT %s FROM $db.`%s`" % (', '.join(exprs), self.table_name)
+        #for row in self.db.select(sql):
+        #    for c in columns:
+        #        column_stats[c] = dict(average_rows=getattr(row, c), size=4)
         # Get average size per column. This may fail because data_uncompressed_bytes is a recent addition
         sql = "SELECT * FROM system.columns WHERE database='%s' AND table='%s'" % (self.db_name, self.table_name)
         for col_def in self.db.select(sql):
-            column_stats[col_def.name]['size'] = self._calc_col_size(col_def, total_rows) 
+            column_stats[col_def.name] = dict(average_rows=100000, size=self._calc_col_size(col_def, 100000))
+
         # Debug
         for c in columns:
             log_to_postgres(c + ': ' + repr(column_stats[c]))
